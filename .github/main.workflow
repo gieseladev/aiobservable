@@ -11,13 +11,13 @@ action "filter tag" {
 }
 
 action "install dependencies" {
-  uses = "jefftriplett/python-actions@master"
+  uses = "gieseladev/python-actions@3.7"
   args = "pip install pytest pytest-asyncio"
   needs = "filter tag"
 }
 
 action "test" {
-  uses = "jefftriplett/python-actions@master"
+  uses = "gieseladev/python-actions@3.7"
   args = "pytest"
   needs = "install dependencies"
 }
