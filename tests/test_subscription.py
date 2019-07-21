@@ -46,6 +46,7 @@ async def test_aiter():
     _ = o.emit(Event("c"))
 
     await asyncio.sleep(0)
+    # this will stop the listener loop
     sub.unsubscribe()
 
     assert await fut == [Event("a"), Event("b"), Event("c")]
