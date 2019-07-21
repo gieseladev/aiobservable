@@ -18,7 +18,7 @@ action "install dependencies" {
 
 action "test" {
   uses = "gieseladev/python-actions@3.7"
-  args = "pytest"
+  args = "python -m pytest"
   needs = "install dependencies"
 }
 
