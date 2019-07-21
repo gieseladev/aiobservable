@@ -10,10 +10,16 @@ action "filter tag" {
   args = "tag v*"
 }
 
+action "install dependencies" {
+  uses = "jefftriplett/python-actions@master"
+  args = "pip install pytest pytest-asyncio"
+  needs = "filter tag"
+}
+
 action "test" {
   uses = "jefftriplett/python-actions@master"
   args = "pytest"
-  needs = "filter tag"
+  needs = "install dependencies"
 }
 
 action "create distribution" {
