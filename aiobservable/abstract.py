@@ -2,7 +2,8 @@ import abc
 import logging
 from typing import AsyncIterable, Awaitable, Callable, Generic, Type, TypeVar, Union, overload
 
-__all__ = ["CallbackType",
+__all__ = ["MaybeAwaitable",
+           "CallbackType", "PredicateCallableType",
            "ListenerError",
            "ObservableABC",
            "ChildEmitterABC", "EmitterABC",
@@ -12,15 +13,18 @@ log = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
-CallbackType = Callable[[T], Union[None, Awaitable[None]]]
+MaybeAwaitable = Union[T, Awaitable[T]]
+
+CallbackType = Callable[[T], MaybeAwaitable[None]]
+PredicateCallableType = Callable[[T], MaybeAwaitable[bool]]
 
 
 class ListenerError(Exception, Generic[T]):
     event: T
-    listener: CallbackType
+    listener: CallbackType[T]
     e: Exception
 
-    def __init__(self, event: T, listener: CallbackType, e: Exception) -> None:
+    def __init__(self, event: T, listener: CallbackType[T], e: Exception) -> None:
         super().__init__(str(e))
         self.event = event
         self.listener = listener
@@ -39,11 +43,11 @@ class SubscriptionClosed(Exception):
 
 class ObservableABC(abc.ABC, Generic[T]):
     @overload
-    def on(self, event: Type[T], callback: CallbackType) -> None:
+    def on(self, event: Type[T], callback: CallbackType[T]) -> None:
         ...
 
     @abc.abstractmethod
-    def on(self, event: Type[T], callback: CallbackType) -> None:
+    def on(self, event: Type[T], callback: CallbackType[T]) -> None:
         ...
 
     @overload
@@ -55,15 +59,15 @@ class ObservableABC(abc.ABC, Generic[T]):
         ...
 
     @overload
-    def off(self, event: Type[T], callback: CallbackType) -> None:
+    def off(self, event: Type[T], callback: CallbackType[T]) -> None:
         ...
 
     @abc.abstractmethod
-    def off(self, event: Type[T] = None, callback: CallbackType = None) -> None:
+    def off(self, event: Type[T] = None, callback: CallbackType[T] = None) -> None:
         ...
 
     @abc.abstractmethod
-    def once(self, event: Type[T], callback: CallbackType) -> None:
+    def once(self, event: Type[T], callback: CallbackType[T], *, predicate: PredicateCallableType[T] = None) -> None:
         ...
 
 
@@ -99,9 +103,9 @@ class SubscriptionABC(abc.ABC, Generic[T]):
     async def __aexit__(self, exc_type: Type[Exception], exc_val: Exception, exc_tb) -> None:
         self.unsubscribe()
 
-    async def first(self) -> T:
+    async def first(self, *, predicate: PredicateCallableType[T] = None) -> T:
         try:
-            return await self.next()
+            return await self.next(predicate=predicate)
         finally:
             self.unsubscribe()
 
@@ -111,7 +115,7 @@ class SubscriptionABC(abc.ABC, Generic[T]):
         ...
 
     @abc.abstractmethod
-    async def next(self) -> T:
+    async def next(self, *, predicate: PredicateCallableType[T] = None) -> T:
         ...
 
     @abc.abstractmethod
