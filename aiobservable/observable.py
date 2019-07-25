@@ -224,6 +224,8 @@ class Observable(ObservableABC[T], EmitterABC, SubscribableABC[T], Generic[T]):
         return map(fire_task, listeners)
 
     def __emit(self, event: T, *, ignore_exceptions: bool) -> asyncio.Future:
+        log.debug("%s emitting %s", self, event)
+
         event_type = type(event)
         self.__check_event(event_type)
 
