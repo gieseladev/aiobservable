@@ -2,7 +2,7 @@ import asyncio
 import inspect
 import logging
 from typing import Awaitable, Callable, Container, Dict, Generic, Iterable, List, MutableMapping, Optional, Set, Type, \
-    TypeVar
+    TypeVar, overload
 
 from .abstract import ChildEmitterABC, EmitterABC, ObservableABC, SubscribableABC, SubscriptionABC
 from .types import CallbackCallable, EventType, EventTypeTuple, ListenerError, MaybeAwaitable, PredicateCallable, \
@@ -64,6 +64,14 @@ class Subscription(SubscriptionABC[T], Generic[T]):
 
         self.__event_set.clear()
         return self.__current
+
+    @overload
+    async def next(self) -> T:
+        ...
+
+    @overload
+    async def next(self, *, predicate: PredicateCallable[T]) -> T:
+        ...
 
     async def next(self, predicate: PredicateCallable = None) -> T:
         if predicate is None:
@@ -171,8 +179,24 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
         for event_ in events:
             get_listeners(event_).append(callback)
 
+    @overload
+    def on(self, *, callback: CallbackCallable[T]) -> None:
+        ...
+
+    @overload
+    def on(self, event: EventType[T], callback: CallbackCallable[T]) -> None:
+        ...
+
     def on(self, event: EventType[T] = None, callback: CallbackCallable[T] = None) -> None:
         self.__add_listener(event, callback, once=False, caller="on")
+
+    @overload
+    def once(self, *, callback: CallbackCallable[T]) -> None:
+        ...
+
+    @overload
+    def once(self, event: EventType[T], callback: CallbackCallable[T]) -> None:
+        ...
 
     def once(self, event: EventType[T] = None, callback: CallbackCallable[T] = None) -> None:
         self.__add_listener(event, callback, once=True, caller="off")
@@ -206,6 +230,18 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
     def __remove_callback_from_events(self, events: EventTypeTuple[T], callback: CallbackCallable[T]) -> None:
         for event in events:
             self.__remove_callback_from_listeners(event, callback)
+
+    @overload
+    def off(self, *, event: EventType[T]) -> None:
+        ...
+
+    @overload
+    def off(self, *, callback: CallbackCallable[T]) -> None:
+        ...
+
+    @overload
+    def off(self, event: EventType[T], callback: CallbackCallable[T]) -> None:
+        ...
 
     def off(self, event: EventType[T] = None, callback: CallbackCallable[T] = None) -> None:
         if event is None and callback is None:
@@ -314,7 +350,7 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 
         return False
 
-    def add_child(self, emitter: ChildEmitterABC) -> None:
+    def add_child(self, emitter: ChildEmitterABC[T]) -> None:
         if self.has_child(emitter):
             raise ValueError(f"{emitter} is already a child of {self}")
 
@@ -324,7 +360,7 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 
         self.__child_emitters.append(emitter)
 
-    def remove_child(self, emitter: ChildEmitterABC) -> None:
+    def remove_child(self, emitter: ChildEmitterABC[T]) -> None:
         try:
             self.__child_emitters.remove(emitter)
         except ValueError:
@@ -336,6 +372,14 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
                 self.__subscriptions[event].remove(subscription)
             except (KeyError, ValueError):
                 pass
+
+    @overload
+    def subscribe(self) -> SubscriptionABC[T]:
+        ...
+
+    @overload
+    def subscribe(self, event: EventType[T]) -> SubscriptionABC[T]:
+        ...
 
     def subscribe(self, event: EventType[T] = None) -> SubscriptionABC:
         if event is None:

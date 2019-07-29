@@ -300,13 +300,20 @@ class SubscribableABC(abc.ABC, Generic[T]):
     __slots__ = ()
 
     @overload
-    def subscribe(self) -> SubscriptionABC[T]:
-        ...
+    def subscribe(self) -> SubscriptionABC[T]: ...
 
     @overload
-    def subscribe(self, event: EventType[T]) -> SubscriptionABC[T]:
-        ...
+    def subscribe(self, event: EventType[T]) -> SubscriptionABC[T]: ...
 
     @abc.abstractmethod
     def subscribe(self, event: EventType[T] = None) -> SubscriptionABC[T]:
+        """Subscribe to the given event(s).
+
+        Args:
+            event: Event selector. Event type or multiple event types to
+                subscribe to. Can be `None` which will subscribe to all events.
+
+        Returns:
+            A subscription which is subscribed to the selected events.
+        """
         ...
