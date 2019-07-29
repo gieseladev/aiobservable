@@ -1,3 +1,3 @@
 # AIObservable
 
-A simple implementation of observables
+A simple implementation of observables.

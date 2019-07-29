@@ -5,13 +5,14 @@ import pytest
 
 import aiobservable
 
+pytestmark = pytest.mark.asyncio
+
 
 @dataclasses.dataclass()
 class Event:
     a: str
 
 
-@pytest.mark.asyncio
 async def test_first():
     o = aiobservable.Observable()
     sub = o.subscribe(Event)
@@ -21,7 +22,15 @@ async def test_first():
     assert sub.closed
 
 
-@pytest.mark.asyncio
+async def test_await():
+    o = aiobservable.Observable()
+    sub = o.subscribe(Event)
+    await o.emit(Event("test"))
+
+    assert await sub == Event("test")
+    assert sub.closed
+
+
 async def test_aiter():
     o = aiobservable.Observable([Event])
     sub = o.subscribe()
@@ -50,3 +59,18 @@ async def test_aiter():
     sub.unsubscribe()
 
     assert await fut == [Event("a"), Event("b"), Event("c")]
+
+
+async def test_multiple():
+    @dataclasses.dataclass()
+    class Event2:
+        a: int
+
+    o = aiobservable.Observable()
+    sub = o.subscribe((Event, Event2))
+
+    await o.emit(Event("test"))
+    assert await sub.next() == Event("test")
+
+    await o.emit(Event2(5))
+    assert await sub.next() == Event2(5)

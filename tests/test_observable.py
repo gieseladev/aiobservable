@@ -5,13 +5,14 @@ import pytest
 
 import aiobservable
 
+pytestmark = pytest.mark.asyncio
+
 
 @dataclasses.dataclass()
 class Event:
     a: str
 
 
-@pytest.mark.asyncio
 async def test_observable():
     o = aiobservable.Observable()
 
@@ -48,7 +49,6 @@ async def test_observable():
     assert events == [Event("hello"), Event("world")]
 
 
-@pytest.mark.asyncio
 async def test_observable_off():
     o = aiobservable.Observable()
 
@@ -86,14 +86,13 @@ async def test_observable_off():
     assert last_event == e
     assert set_count == 3
 
-    o.off()
+    o.off(Event2, test)
 
     await o.emit(Event2())
     assert last_event == e
     assert set_count == 3
 
 
-@pytest.mark.asyncio
 async def test_observable_once():
     o = aiobservable.Observable()
 
@@ -106,18 +105,6 @@ async def test_observable_once():
 
     o.once(Event, cb_once)
 
-    pred_event = None
-
-    def cb_pred(evt):
-        nonlocal pred_event
-        assert pred_event is None, "callback called twice"
-        pred_event = evt
-
-    def pred(evt):
-        return evt.a == "world"
-
-    o.once(Event, cb_pred, predicate=pred)
-
     await asyncio.gather(
         o.emit(Event("hello")),
         o.emit(Event("world")),
@@ -126,4 +113,3 @@ async def test_observable_once():
     )
 
     assert once_event == Event("hello")
-    assert pred_event == Event("world")
