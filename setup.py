@@ -17,6 +17,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
 
     packages=setuptools.find_packages(exclude=("docs", "tests")),
+    package_data={
+        "aiowamp": ["py.typed"],
+    },
 
     python_requires="~=3.7",
 )

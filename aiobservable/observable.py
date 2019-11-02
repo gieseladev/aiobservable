@@ -52,6 +52,17 @@ class Subscription(SubscriptionABC[T], Generic[T]):
         self.__event_set = asyncio.Event()
         self.__current = None
 
+    def __repr__(self) -> str:
+        return f"{type(self).__qualname__}({self.__unsub!r})"
+
+    def __str__(self) -> str:
+        if self.__closed:
+            closed_str = "; CLOSED"
+        else:
+            closed_str = ""
+
+        return f"Subscription[{id(self):x}{closed_str}]"
+
     @property
     def closed(self) -> bool:
         return self.__closed
@@ -143,6 +154,16 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 
         self.__events = events
 
+    def __repr__(self) -> str:
+        type_name = type(self).__qualname__
+        if self.__events:
+            return f"{type_name}(events={tuple(self.__events)!r})"
+
+        return f"{type_name}()"
+
+    def __str__(self) -> str:
+        return f"Observable[{id(self):x}]"
+
     def __check_event(self, event: EventType[T]) -> None:
         if self.__events is None:
             return
@@ -199,7 +220,7 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
         ...
 
     def once(self, event: EventType[T] = None, callback: CallbackCallable[T] = None) -> None:
-        self.__add_listener(event, callback, once=True, caller="off")
+        self.__add_listener(event, callback, once=True, caller="once")
 
     def __remove_callback_from_listeners(self, event: Optional[Type[T]], callback: CallbackCallable[T]) -> None:
         try:
