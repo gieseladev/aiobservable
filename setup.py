@@ -21,5 +21,5 @@ setuptools.setup(
         "aiowamp": ["py.typed"],
     },
 
-    python_requires="~=3.7",
+    python_requires=">=3.6",
 )
