@@ -52,4 +52,4 @@ from .observable import *
 from .types import *
 
 __author__ = "Giesela Inc."
-__version__ = "0.2.1"
+__version__ = "0.2.2"

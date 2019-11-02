@@ -13,6 +13,11 @@ class Event:
     a: str
 
 
+@dataclasses.dataclass()
+class Event2:
+    a: str
+
+
 async def test_observable():
     o = aiobservable.Observable()
 
@@ -113,3 +118,24 @@ async def test_observable_once():
     )
 
     assert once_event == Event("hello")
+
+
+async def test_observable_on_all():
+    o = aiobservable.Observable()
+
+    events = []
+
+    def cb_all(evt):
+        events.append(evt)
+
+    o.on(callback=cb_all)
+
+    e1 = Event("hello")
+    e2 = Event2("world")
+
+    await asyncio.gather(
+        o.emit(e1),
+        o.emit(e2),
+    )
+
+    assert events == [e1, e2]

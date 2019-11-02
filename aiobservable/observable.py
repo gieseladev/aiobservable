@@ -320,21 +320,21 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 
         return map(fire, listeners)
 
-    def __emit_listeners(self, event: T, *,
+    def __emit_listeners(self, event: T, event_type: Optional[Type[T]], *,
                          loop: asyncio.AbstractEventLoop,
                          ignore_exceptions: bool) -> Iterable[asyncio.Future]:
         try:
-            listeners = self.__listeners[type(event)]
+            listeners = self.__listeners[event_type]
         except KeyError:
             return ()
 
         return self.__fire_listeners(listeners, event, loop=loop, ignore_exceptions=ignore_exceptions)
 
-    def __emit_once_listeners(self, event: T, *,
+    def __emit_once_listeners(self, event: T, event_type: Optional[Type[T]], *,
                               loop: asyncio.AbstractEventLoop,
                               ignore_exceptions: bool) -> Iterable[asyncio.Future]:
         try:
-            listeners = self.__once_listeners[type(event)]
+            listeners = self.__once_listeners[event_type]
         except KeyError:
             return ()
 
@@ -351,8 +351,24 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
         futures: List[Awaitable] = []
 
         loop = asyncio.get_event_loop()
-        futures.extend(self.__emit_once_listeners(event, loop=loop, ignore_exceptions=ignore_exceptions))
-        futures.extend(self.__emit_listeners(event, loop=loop, ignore_exceptions=ignore_exceptions))
+
+        futures.extend(self.__emit_once_listeners(
+            event, event_type,
+            loop=loop, ignore_exceptions=ignore_exceptions)
+        )
+        futures.extend(self.__emit_once_listeners(
+            event, None,
+            loop=loop, ignore_exceptions=ignore_exceptions)
+        )
+
+        futures.extend(self.__emit_listeners(
+            event, event_type,
+            loop=loop, ignore_exceptions=ignore_exceptions)
+        )
+        futures.extend(self.__emit_listeners(
+            event, None,
+            loop=loop, ignore_exceptions=ignore_exceptions)
+        )
 
         for emitter in self.__child_emitters:
             futures.append(emitter.emit(event))
