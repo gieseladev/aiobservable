@@ -1,6 +1,6 @@
 import abc
 import logging
-from typing import AsyncIterable, Awaitable, Generic, Type, TypeVar, overload
+from typing import AsyncIterator, Awaitable, Generic, Optional, Type, TypeVar, overload
 
 from .types import CallbackCallable, EventType, PredicateCallable, SubscriptionClosed
 
@@ -188,7 +188,7 @@ class EmitterABC(ChildEmitterABC[T], Generic[T]):
         ...
 
 
-class SubscriptionABC(abc.ABC, Generic[T]):
+class SubscriptionABC(abc.ABC, Generic[T], AsyncIterator[T]):
     """Abstract base class of a subscription.
 
     Subscriptions have the following properties:
@@ -214,10 +214,10 @@ class SubscriptionABC(abc.ABC, Generic[T]):
     def __await__(self):
         return self.first().__await__()
 
-    def __aiter__(self) -> AsyncIterable[T]:
+    def __aiter__(self):
         return self
 
-    async def __anext__(self) -> AsyncIterable[T]:
+    async def __anext__(self) -> T:
         try:
             return await self.next()
         except SubscriptionClosed:
@@ -267,7 +267,7 @@ class SubscriptionABC(abc.ABC, Generic[T]):
         ...
 
     @overload
-    async def next(self, *, predicate: PredicateCallable[T]) -> T:
+    async def next(self, *, predicate: Optional[PredicateCallable[T]]) -> T:
         ...
 
     @abc.abstractmethod

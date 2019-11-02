@@ -1,8 +1,8 @@
 import asyncio
 import inspect
 import logging
-from typing import Awaitable, Callable, Container, Dict, Generic, Iterable, List, MutableMapping, Optional, Set, Type, \
-    TypeVar, overload
+from typing import Awaitable, Callable, Container, Dict, Generic, Iterable, List, MutableMapping, Optional, Set, Tuple, \
+    Type, TypeVar, overload
 
 from .abstract import ChildEmitterABC, EmitterABC, ObservableABC, SubscribableABC, SubscriptionABC
 from .types import CallbackCallable, EventType, EventTypeTuple, ListenerError, MaybeAwaitable, PredicateCallable, \
@@ -25,9 +25,9 @@ async def maybe_await(a: MaybeAwaitable[T]) -> T:
         Either the result of awaiting the `Awaitable` or the object.
     """
     if inspect.isawaitable(a):
-        return await a
+        return await a  # type: ignore
     else:
-        return a
+        return a  # type: ignore
 
 
 class Subscription(SubscriptionABC[T], Generic[T]):
@@ -74,7 +74,7 @@ class Subscription(SubscriptionABC[T], Generic[T]):
             raise SubscriptionClosed
 
         self.__event_set.clear()
-        return self.__current
+        return self.__current  # type: ignore
 
     @overload
     async def next(self) -> T:
@@ -150,7 +150,7 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 
         if events is not None:
             events = set(events)
-            events.update((ListenerError,))
+            events.update((ListenerError,))  # type: ignore
 
         self.__events = events
 
@@ -179,6 +179,8 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
             raise TypeError(f"{caller}(): \"callback\" needs to be provided")
         elif not callable(callback):
             raise TypeError(f"{caller}() \"callback\" has to be callable")
+
+        events: Tuple[Optional[EventType[T]], ...]
 
         if event is None:
             # use None as a special key
@@ -403,11 +405,15 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
         ...
 
     def subscribe(self, event: EventType[T] = None) -> SubscriptionABC:
+        events: Tuple[Optional[EventType[T]], ...]
+
         if event is None:
             events = (None,)
         else:
             events = get_events(event)
             self.__check_event(events)
+
+        subscription: Subscription
 
         def unsub() -> None:
             self.__unsubscribe(events, subscription)
@@ -424,9 +430,11 @@ class Observable(ObservableABC[T], EmitterABC[T], SubscribableABC[T], Generic[T]
 def _check_listener(event: Optional[type], listeners: Container[CallbackCallable], listener: CallbackCallable) -> None:
     if listener in listeners:
         if event is None:
-            event = "all events"
+            event_str = "all events"
+        else:
+            event_str = f"{event.__module__}.{event.__qualname__}"
 
-        raise ValueError(f"{listener} already listening to {event}")
+        raise ValueError(f"{listener} already listening to {event_str}")
 
 
 def get_events(event: EventType[T]) -> EventTypeTuple[T]:

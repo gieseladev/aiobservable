@@ -6,8 +6,13 @@ verify_ssl = true
 [dev-packages]
 pytest = "*"
 pytest-asyncio = "*"
+mypy = "*"
 
 [packages]
 
 [requires]
 python_version = "3.7"
+
+[scripts]
+mypy = "mypy ."
+tests = "python -m pytest"
