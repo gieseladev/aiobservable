@@ -14,5 +14,6 @@ mypy = "*"
 python_version = "3.7"
 
 [scripts]
+build = "python setup.py sdist bdist_wheel"
 mypy = "mypy ."
 tests = "python -m pytest"
